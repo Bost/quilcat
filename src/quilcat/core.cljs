@@ -43,6 +43,12 @@
      :size {:width 50 :height 50}
      :r 20
      :moving true
+     :active false}}
+   {:elem3
+    {:coord {:x 400 :y 400}
+     :size {:width 50 :height 50}
+     :r 20
+     :moving true
      :active false}}))
 
 (defn update-state [state] state)
@@ -104,35 +110,20 @@
     (and (<= ex mx (+ ex sx))
          (<= ey my (+ ey sy)))))
 
-(defn fns [state elem-key event]
-  (if (over? (elem-key state) event)
-    (not (get-in state [elem-key :active]))))
-
-(defn fn-set-active-elem [state elem-key event]
-  (update-in state
-   [elem-key :active]
-   (fn []
-     (if (over? (elem-key state) event)
-       (not (get-in state [elem-key :active]))))))
+(defn fn-toggle-active [elem state event]
+  (if (over? elem event)
+    (update-in elem [:active] (fn [] (not (get-in elem [:active]))))
+    elem))
 
 (defn map-values
   [m keys f & args]
-  (reduce #(apply update-in %1 [%2] f args) m keys))
+  (reduce (fn [hm ks] (apply update-in hm [ks] f args)) m keys))
 
 (defn mouse-clicked [state event]
   #_(println "mouse-clicked" "x" (:x event) "y" (:y event)
              "over?" (over? event (:elem1 state)))
-  #_(map-values state [:elem1 :elem2] fns event)
-  (-> state
-      ;; (update-in [:x] (fn [] (:x event)))
-      ;; (update-in [:y] (fn [] (:y event)))
-      (fn-set-active-elem :elem1 event)
-      (fn-set-active-elem :elem2 event)
-      (update-in
-       [:moving]
-       (fn []
-         (if (over? event (:elem1 state))
-           (not (:moving state)))))))
+  (let [elems (remove (fn [k] (in? #{:x :y} k)) (keys state))]
+    (map-values state elems fn-toggle-active state event)))
 
 (defn mouse-entered [state]
   #_(println "mouse-entered")
