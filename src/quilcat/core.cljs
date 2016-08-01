@@ -1,7 +1,11 @@
 (ns quilcat.core
   (:require [quil.core :as q :include-macros true]
-            [quil.middleware :as m]))
+            [quil.middleware :as m]
+            [sablono.core :as sab])
+  (:require-macros
+   [devcards.core :refer [defcard deftest]]))
 
+;; TODO take a look at deftest
 
 (enable-console-print!)
 
@@ -139,3 +143,35 @@
   :mouse-clicked mouse-clicked
   :mouse-entered mouse-entered
   :middleware [m/fun-mode])
+
+#_(defcard
+  #_(setup-sketch)
+  #_(draw-state (setup-sketch))
+  #_(map-values {:x 0 :y 10 :z nil} [:x :y] + 20) ; initial data
+  (map-values {:x 0 :y 10 :z nil} [:x :y] + 20))
+
+(defcard devcard-X ;; optional symbol name
+  #_"**Optional Mardown documentation**" ;; optional literal string doc
+  ;; main obj
+  (fn [data-atom owner]
+    (sab/html
+     [:div
+      [:h3 "Example Counter w/Initial Data: " (:count @data-atom)]
+      [:button
+       {:onClick (fn [] (swap! data-atom update-in [:count] inc))}
+       "inc"]]))
+  ;; initial data
+  {:count 10}
+  ;; devcard options
+  {
+   ;; devcard-name is displayed only if :heading true :frame true
+   :heading true
+   :frame true
+   :padding true
+
+   :hidden false       ;; whether to diplay the card or not
+   :inspect-data true  ;; whether to display the data in the card atom
+   :watch-atom true    ;; whether to watch the atom and render on change
+   :history false      ;; whether to record a change history of the atom
+   :classname ""       ;; provide card with a custom classname
+   })

@@ -8,6 +8,7 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.93"]
+                 [devcards "0.2.1-7"]
                  [quil "2.4.0"]
                  [org.clojure/core.async "0.2.385"
                   :exclusions [org.clojure/tools.reader]]]
@@ -31,7 +32,9 @@
                            ;; in the default browser once Figwheel has
                            ;; started and complied your application.
                            ;; Comment this out once it no longer serves you.
-                           :open-urls ["http://localhost:3449/index.html"]}
+                           ;; :open-urls ["http://localhost:3449/index.html"]
+                           :devcards true
+                           }
 
                 :compiler {:main quilcat.core
                            :asset-path "js/compiled/out"
