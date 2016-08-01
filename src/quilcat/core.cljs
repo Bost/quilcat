@@ -81,8 +81,8 @@
         y (get-in state [elem :coord :y])
         xe (get-in state [elem :size :width])
         ye (get-in state [elem :size :height])
-        active (get-in state [:active-elems])]
-    (apply q/stroke (if (in? active elem) black-stroke red-stroke))
+        active-elems (get-in state [:active-elems])]
+    (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
     (q/rect x y xe ye)))
 
 (defn draw-state [state]
@@ -98,15 +98,11 @@
     (draw-cat x y)
     (draw-cat (+ (* 2 offset) x) y)))
 
-(defn mouse-moved [state event]
-  state
-  #_(if (get-in [:elem1 :moving] state)
-    (let [ex [:elem1 :coord :x]
-          ey [:elem1 :coord :y]]
-      (-> state
-          (update-in ex (fn [] (:x event)))
-          (update-in ey (fn [] (:y event)))))
-    state))
+(defn elems [state]
+  (remove (fn [e] (in? #{:x :y :active-elems} e)) (keys state)))
+
+(defn active-elems [state]
+  (get-in state [:active-elems]))
 
 (defn over? [elem event]
   (let [mx (:x event) my (:y event)
@@ -132,14 +128,26 @@
   [m keys f & args]
   (reduce (fn [hm ks] (apply update-in hm [ks] f args)) m keys))
 
-(defn mouse-clicked [state event]
-  (let [old-active (get-in state [:active-elems])
-        elems (remove (fn [e] (in? #{:x :y :active-elems} e)) (keys state))
-        new-active (set (remove nil? (for [e elems]
+(defn mouse-moved [state event]
+  (map-values
+   state (active-elems state)
+   (fn [elem]
+     (update-in
+      elem [:coord]
+      (fn []
+        (let [{:keys [width height]} (get-in elem [:size])]
+          {:x (- (:x event) (/ width 2))
+           :y (- (:y event) (/ height 2))}))))))
+
+;; TODO detect over lapping elems when on-clicked
+(defn onclick [state event]
+  (let [old-active (active-elems state)
+        new-active (set (remove nil? (for [e (elems state)]
                                        (if (over? (e state) event)
                                          e))))]
     (update-in state [:active-elems]
                (fn []
+                 #_new-active
                  (set/difference (set/union old-active new-active)
                                  (set/intersection old-active new-active))))))
 
@@ -154,7 +162,7 @@
   :draw draw-state
   :update update-state
   :mouse-moved mouse-moved
-  :mouse-clicked mouse-clicked
+  :mouse-clicked onclick
   :mouse-entered mouse-entered
   :middleware [m/fun-mode])
 
