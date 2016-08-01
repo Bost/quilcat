@@ -1,7 +1,8 @@
 (ns quilcat.core
   (:require [quil.core :as q :include-macros true]
             [quil.middleware :as m]
-            [sablono.core :as sab])
+            [sablono.core :as sab]
+            [clojure.set :as set])
   (:require-macros
    [devcards.core :refer [defcard deftest]]))
 
@@ -36,7 +37,8 @@
 (defn setup-sketch []
   (conj
    size
-   {:elem1
+   {:active-elems #{}
+    :elem1
     {:coord {:x 100 :y 100}
      :size {:width 50 :height 50}
      :r 20
@@ -70,23 +72,25 @@
 (defn center [state kw]
   (/ (kw state) 2))
 
-(defn draw-elem [state k]
-  (let [x (get-in state [k :coord :x])
-        y (get-in state [k :coord :y])
-        xe (get-in state [k :size :width])
-        ye (get-in state [k :size :height])
-        black-stroke [0 0 0]
-        red-stroke [255 0 0]
-        white-stroke [255 255 255]]
-    (apply q/stroke (if (get-in state [k :active]) black-stroke red-stroke))
-    (q/rect x y xe ye)
-    (apply q/stroke black-stroke)))
+(def black-stroke [0 0 0])
+(def red-stroke [255 0 0])
+(def white-stroke [255 255 255])
+
+(defn draw-elem [state elem]
+  (let [x (get-in state [elem :coord :x])
+        y (get-in state [elem :coord :y])
+        xe (get-in state [elem :size :width])
+        ye (get-in state [elem :size :height])
+        active (get-in state [:active-elems])]
+    (apply q/stroke (if (in? active elem) black-stroke red-stroke))
+    (q/rect x y xe ye)))
 
 (defn draw-state [state]
   (q/background 255)
 
-  (doseq [el (remove #(in? #{:x :y} %) (keys state))]
-    (draw-elem state el))
+  (doseq [elem (remove #(in? #{:x :y} %) (keys state))]
+    (draw-elem state elem))
+  #_(apply q/stroke black-stroke)
 
   #_(let [offset 200
         x (- (center state :x) offset)
@@ -119,15 +123,25 @@
     (update-in elem [:active] (fn [] (not (get-in elem [:active]))))
     elem))
 
+(defn fn-set-active [elem state event]
+  (if (over? elem event)
+    (update-in elem [:active] (fn [] (not (get-in elem [:active]))))
+    elem))
+
 (defn map-values
   [m keys f & args]
   (reduce (fn [hm ks] (apply update-in hm [ks] f args)) m keys))
 
 (defn mouse-clicked [state event]
-  #_(println "mouse-clicked" "x" (:x event) "y" (:y event)
-             "over?" (over? event (:elem1 state)))
-  (let [elems (remove (fn [k] (in? #{:x :y} k)) (keys state))]
-    (map-values state elems fn-toggle-active state event)))
+  (let [old-active (get-in state [:active-elems])
+        elems (remove (fn [e] (in? #{:x :y :active-elems} e)) (keys state))
+        new-active (set (remove nil? (for [e elems]
+                                       (if (over? (e state) event)
+                                         e))))]
+    (update-in state [:active-elems]
+               (fn []
+                 (set/difference (set/union old-active new-active)
+                                 (set/intersection old-active new-active))))))
 
 (defn mouse-entered [state]
   #_(println "mouse-entered")
@@ -153,6 +167,7 @@
 (defcard devcard-X ;; optional symbol name
   #_"**Optional Mardown documentation**" ;; optional literal string doc
   ;; main obj
+  #_(q/state-atom)
   (fn [data-atom owner]
     (sab/html
      [:div
@@ -165,10 +180,7 @@
   ;; devcard options
   {
    ;; devcard-name is displayed only if :heading true :frame true
-   :heading true
-   :frame true
-   :padding true
-
+   :heading false :frame false :padding false
    :hidden false       ;; whether to diplay the card or not
    :inspect-data true  ;; whether to display the data in the card atom
    :watch-atom true    ;; whether to watch the atom and render on change
