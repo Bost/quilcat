@@ -78,12 +78,11 @@
 (def red-stroke [255 0 0])
 (def white-stroke [255 255 255])
 
-(defn draw-elem [state elem]
-  (let [x (get-in state [elem :coord :x])
-        y (get-in state [elem :coord :y])
-        xe (get-in state [elem :size :x])
-        ye (get-in state [elem :size :y])
-        active-elems (get-in state [:active-elems])]
+(defn draw-elem [elem active-elems]
+  (let [x  (get-in elem [:coord :x])
+        y  (get-in elem [:coord :y])
+        xe (get-in elem [:size :x])
+        ye (get-in elem [:size :y])]
     (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
     (q/rect x y xe ye)))
 
@@ -97,19 +96,20 @@
     (q/line 0 0 (+ arrow-size) (- arrow-size)))
   (q/pop-matrix))
 
+(defn elems [state]
+  (remove (fn [e] (in? #{:x :y :active-elems :arrows} e)) (keys state)))
+
 (defn draw-state [state]
   (q/background 255)
 
-  (doseq [elem (remove #(in? #{:x :y} %) (keys state))]
-    (draw-elem state elem))
+  (let [active-elems (get-in state [:active-elems])]
+    (doseq [elem (elems state)]
+      (draw-elem (get-in state [elem]) active-elems)))
   (doseq [[src dst] (get-in state [:arrows])]
-    #_(println "src" src "dst" dst)
     (let [src (get-in state [src])
           dst (get-in state [dst])]
       (arrow (center src :x) (center src :y)
-             (center dst :x) (center dst :y))
-      #_(arrow (:x srce) (:y srce)
-             (:x dste) (:y dste))))
+             (center dst :x) (center dst :y))))
   #_(apply q/stroke black-stroke)
 
   #_(let [offset 200
@@ -117,9 +117,6 @@
         y (center state :y)]
     (draw-cat x y)
     (draw-cat (+ (* 2 offset) x) y)))
-
-(defn elems [state]
-  (remove (fn [e] (in? #{:x :y :active-elems} e)) (keys state)))
 
 (defn active-elems [state]
   (get-in state [:active-elems]))
@@ -155,9 +152,9 @@
      (update-in
       elem [:coord]
       (fn []
-        (let [{:keys [width height]} (get-in elem [:size])]
-          {:x (- (:x event) (/ width 2))
-           :y (- (:y event) (/ height 2))}))))))
+        (let [{:keys [x y]} (get-in elem [:size])]
+          {:x (- (:x event) (/ x 2))
+           :y (- (:y event) (/ y 2))}))))))
 
 ;; TODO detect over lapping elems when on-clicked
 (defn onclick [state event]
