@@ -42,20 +42,14 @@
     :elem1
     {:coord {:x 100 :y 100}
      :size {:x 50 :y 50}
-     :r 20
-     :moving true
      :active false}}
    {:elem2
     {:coord {:x 400 :y 200}
      :size {:x 50 :y 50}
-     :r 20
-     :moving true
      :active false}}
    {:elem3
     {:coord {:x 200 :y 400}
      :size {:x 50 :y 50}
-     :r 20
-     :moving true
      :active false}}))
 
 (defn update-state [state] state)
@@ -78,13 +72,12 @@
 (def red-stroke [255 0 0])
 (def white-stroke [255 255 255])
 
-(defn draw-elem [elem active-elems]
+(defn draw-elem [elem]
   (let [x  (get-in elem [:coord :x])
         y  (get-in elem [:coord :y])
         xe (get-in elem [:size :x])
         ye (get-in elem [:size :y])]
-    (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
-    (q/rect x y xe ye)))
+(q/rect x y xe ye)))
 
 (defn arrow [x1 y1 x2 y2]
   (q/line x1 y1 x2 y2)
@@ -104,7 +97,8 @@
 
   (let [active-elems (get-in state [:active-elems])]
     (doseq [elem (elems state)]
-      (draw-elem (get-in state [elem]) active-elems)))
+      (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
+      (draw-elem (get-in state [elem]))))
   (doseq [[src dst] (get-in state [:arrows])]
     (let [src (get-in state [src])
           dst (get-in state [dst])]
@@ -130,16 +124,6 @@
         sy (get-in elem [:size :y])]
     (and (<= ex mx (+ ex sx))
          (<= ey my (+ ey sy)))))
-
-(defn fn-toggle-active [elem state event]
-  (if (over? elem event)
-    (update-in elem [:active] (fn [] (not (get-in elem [:active]))))
-    elem))
-
-(defn fn-set-active [elem state event]
-  (if (over? elem event)
-    (update-in elem [:active] (fn [] (not (get-in elem [:active]))))
-    elem))
 
 (defn map-values
   [m keys f & args]
@@ -189,7 +173,7 @@
   #_(map-values {:x 0 :y 10 :z nil} [:x :y] + 20) ; initial data
   (map-values {:x 0 :y 10 :z nil} [:x :y] + 20))
 
-(defcard devcard-X ;; optional symbol name
+#_(defcard devcard-X ;; optional symbol name
   #_"**Optional Mardown documentation**" ;; optional literal string doc
   ;; main obj
   #_(q/state-atom)
