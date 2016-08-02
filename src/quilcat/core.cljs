@@ -38,21 +38,22 @@
   (conj
    size
    {:active-elems #{}
+    :arrows #{[:elem1 :elem2] [:elem2 :elem3] [:elem1 :elem3]}
     :elem1
     {:coord {:x 100 :y 100}
-     :size {:width 50 :height 50}
+     :size {:x 50 :y 50}
      :r 20
      :moving true
      :active false}}
    {:elem2
-    {:coord {:x 200 :y 200}
-     :size {:width 50 :height 50}
+    {:coord {:x 400 :y 200}
+     :size {:x 50 :y 50}
      :r 20
      :moving true
      :active false}}
    {:elem3
-    {:coord {:x 400 :y 400}
-     :size {:width 50 :height 50}
+    {:coord {:x 200 :y 400}
+     :size {:x 50 :y 50}
      :r 20
      :moving true
      :active false}}))
@@ -69,8 +70,9 @@
     (q/ellipse (- x (+ 8 ox)) y 10 10)
     (q/ellipse (+ x ox) (+ y oy) 10 10)))
 
-(defn center [state kw]
-  (/ (kw state) 2))
+(defn center [elem axis]
+  (+ (get-in elem [:coord axis])
+     (/ (get-in elem [:size axis]) 2)))
 
 (def black-stroke [0 0 0])
 (def red-stroke [255 0 0])
@@ -79,17 +81,35 @@
 (defn draw-elem [state elem]
   (let [x (get-in state [elem :coord :x])
         y (get-in state [elem :coord :y])
-        xe (get-in state [elem :size :width])
-        ye (get-in state [elem :size :height])
+        xe (get-in state [elem :size :x])
+        ye (get-in state [elem :size :y])
         active-elems (get-in state [:active-elems])]
     (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
     (q/rect x y xe ye)))
+
+(defn arrow [x1 y1 x2 y2]
+  (q/line x1 y1 x2 y2)
+  (q/push-matrix)
+  (q/translate x2 y2)
+  (q/rotate (q/atan2 (- x1 x2) (- y2 y1)))
+  (let [arrow-size 4]
+    (q/line 0 0 (- arrow-size) (- arrow-size))
+    (q/line 0 0 (+ arrow-size) (- arrow-size)))
+  (q/pop-matrix))
 
 (defn draw-state [state]
   (q/background 255)
 
   (doseq [elem (remove #(in? #{:x :y} %) (keys state))]
     (draw-elem state elem))
+  (doseq [[src dst] (get-in state [:arrows])]
+    #_(println "src" src "dst" dst)
+    (let [src (get-in state [src])
+          dst (get-in state [dst])]
+      (arrow (center src :x) (center src :y)
+             (center dst :x) (center dst :y))
+      #_(arrow (:x srce) (:y srce)
+             (:x dste) (:y dste))))
   #_(apply q/stroke black-stroke)
 
   #_(let [offset 200
@@ -109,8 +129,8 @@
         ex (get-in elem [:coord :x])
         ey (get-in elem [:coord :y])
         size (:size elem)
-        sx (get-in elem [:size :width])
-        sy (get-in elem [:size :height])]
+        sx (get-in elem [:size :x])
+        sy (get-in elem [:size :y])]
     (and (<= ex mx (+ ex sx))
          (<= ey my (+ ey sy)))))
 
