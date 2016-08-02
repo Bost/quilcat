@@ -16,38 +16,17 @@
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
 
-(defn in?
-  "true if coll contains elm"
-  [coll elm] (some #(= elm %) coll))
-
-;; (defn draw-line
-;;   "Draws a horizontal line on the canvas at height h"
-;;   [h]
-;;   #_(q/bezier 0.17 0.67 0.83 0.67)
-;;   #_(q/bezier 333 81 218 143 316 154 100 100)
-;;   ;; (q/stroke 0 (- 255 h))
-;;   ;; (q/line 10 h (- (q/width) 20) h)
-;;   ;; (q/stroke 255 h)
-;;   ;; (q/line 10 (+ h 4) (- (q/width) 20) (+ h 4))
-;;   )
-
-(def size {:x 800 :y 600})
-
 (defn draw-rect [elem]
-  (let [x  (get-in elem [:coord :x])
-        y  (get-in elem [:coord :y])
-        xe (get-in elem [:size :x])
-        ye (get-in elem [:size :y])
-        symbol (get-in elem [:symbol])]
-    (q/rect x y xe ye)))
+  (let [{:keys [x y]} (get-in elem [:center])
+        {:keys [width height]} (get-in elem [:size])]
+    (q/rect (- x (/ width 2)) (- y (/ height 2)) width height)))
 
 (defn draw-ellipse [elem]
-  (let [x  (get-in elem [:coord :x])
-        y  (get-in elem [:coord :y])
-        xe (get-in elem [:size :x])
-        ye (get-in elem [:size :y])
-        symbol (get-in elem [:symbol])]
-    (q/ellipse (+ x (/ xe 2)) (+ y (/ ye 2)) xe ye)))
+  (let [{:keys [x y]} (get-in elem [:center])
+        {:keys [width height]} (get-in elem [:size])]
+    (q/ellipse x y height width)))
+
+(def size {:x 800 :y 600})
 
 (defn setup-sketch []
   (conj
@@ -55,21 +34,35 @@
    {:active-elems #{}
     :arrows #{[:elem1 :elem2] [:elem2 :elem3] [:elem1 :elem3]}
     :elem1
-    {:coord {:x 100 :y 100}
-     :size {:x 50 :y 50}
+    {:center {:x 100 :y 100}
+     :size {:width 50 :height 50}
      :drawfn draw-rect}}
    {:elem2
-    {:coord {:x 400 :y 200}
-     :size {:x 50 :y 50}
+    {:center {:x 400 :y 200}
+     :size {:width 50 :height 50}
      :drawfn draw-rect}}
    {:elem3
-    {:coord {:x 200 :y 400}
-     :size {:x 50 :y 50}
+    {:center {:x 200 :y 400}
+     :size {:width 50 :height 50}
      :drawfn draw-rect}}
    {:elem4
-    {:coord {:x 0 :y 0}
-     :size {:x 50 :y 50}
+    {:center {:x 25 :y 25}
+     :size {:width 50 :height 50}
      :drawfn draw-ellipse}}))
+
+(defn in?
+  "true if coll contains elm"
+  [coll elm] (some #(= elm %) coll))
+
+(defn arrow [x1 y1 x2 y2]
+  (q/line x1 y1 x2 y2)
+  (q/push-matrix)
+  (q/translate x2 y2)
+  (q/rotate (q/atan2 (- x1 x2) (- y2 y1)))
+  (let [arrow-size 4]
+    (q/line 0 0 (- arrow-size) (- arrow-size))
+    (q/line 0 0 (+ arrow-size) (- arrow-size)))
+  (q/pop-matrix))
 
 (defn update-state [state] state)
 
@@ -83,23 +76,15 @@
     (q/ellipse (- x (+ 8 ox)) y 10 10)
     (q/ellipse (+ x ox) (+ y oy) 10 10)))
 
+(defn rect? [elem]
+  (in? #{draw-rect} (get-in elem [:drawfn])))
+
 (defn center [elem axis]
-  (+ (get-in elem [:coord axis])
-     (/ (get-in elem [:size axis]) 2)))
+  (get-in elem [:center axis]))
 
 (def black-stroke [0 0 0])
 (def red-stroke [255 0 0])
 (def white-stroke [255 255 255])
-
-(defn arrow [x1 y1 x2 y2]
-  (q/line x1 y1 x2 y2)
-  (q/push-matrix)
-  (q/translate x2 y2)
-  (q/rotate (q/atan2 (- x1 x2) (- y2 y1)))
-  (let [arrow-size 4]
-    (q/line 0 0 (- arrow-size) (- arrow-size))
-    (q/line 0 0 (+ arrow-size) (- arrow-size)))
-  (q/pop-matrix))
 
 (defn elems [state]
   (remove (fn [e] (in? #{:x :y :active-elems :arrows} e)) (keys state)))
@@ -130,14 +115,13 @@
   (get-in state [:active-elems]))
 
 (defn over? [elem event]
-  (let [mx (:x event) my (:y event)
-        ex (get-in elem [:coord :x])
-        ey (get-in elem [:coord :y])
-        size (:size elem)
-        sx (get-in elem [:size :x])
-        sy (get-in elem [:size :y])]
-    (and (<= ex mx (+ ex sx))
-         (<= ey my (+ ey sy)))))
+  (let [{ex :x ey :y} event
+        {cx :x cy :y} (get-in elem [:center])
+        {w :width h :height} (get-in elem [:size])
+        w2 (/ w 2)
+        h2 (/ h 2)]
+    (and (<= (- cx w2) ex (+ cx w2))
+         (<= (- cy h2) ey (+ cy h2)))))
 
 (defn map-values
   [m keys f & args]
@@ -147,12 +131,7 @@
   (map-values
    state (active-elems state)
    (fn [elem]
-     (update-in
-      elem [:coord]
-      (fn []
-        (let [{:keys [x y]} (get-in elem [:size])]
-          {:x (- (:x event) (/ x 2))
-           :y (- (:y event) (/ y 2))}))))))
+     (update-in elem [:center] (fn [] {:x (:x event) :y (:y event)})))))
 
 ;; TODO detect over lapping elems when on-clicked
 (defn onclick [state event]
