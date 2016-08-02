@@ -97,13 +97,14 @@
       (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
       (let [drawfn (get-in state [elem :drawfn])]
         (drawfn (get-in state [elem])))))
+  (apply q/stroke red-stroke)
   (doseq [[src dst] (get-in state [:arrows])]
     (let [src (get-in state [src])
           dst (get-in state [dst])]
       (arrow (center src :x) (center src :y)
              (center dst :x) (center dst :y))))
 
-  #_(apply q/stroke black-stroke)
+
 
   #_(let [offset 200
         x (- (center state :x) offset)
