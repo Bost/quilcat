@@ -32,7 +32,7 @@
   (conj
    size
    {:active-elems #{}
-    :arrows #{[:elem1 :elem2] [:elem2 :elem3] [:elem1 :elem3]}
+    :arrows #{[:elem1 :elem2] [:elem2 :elem3] [:elem1 :elem3] [:elem1 :elem4]}
     :elem1
     {:center {:x 100 :y 100}
      :size {:width 50 :height 50}
@@ -99,12 +99,16 @@
         (drawfn (get-in state [elem])))))
   (apply q/stroke red-stroke)
   (doseq [[src dst] (get-in state [:arrows])]
-    (let [src (get-in state [src])
-          dst (get-in state [dst])]
-      (arrow (center src :x) (center src :y)
-             (center dst :x) (center dst :y))))
+    (let [{sx :x sy :y} (get-in state [src :center])
+          {dx :x dy :y} (get-in state [dst :center])
+          src-angle (q/atan2 (- dx sx) (- dy sy))
+          ssx (+ sx (* 40 (q/sin src-angle)))
+          ssy (+ sy (* 40 (q/cos src-angle)))
 
-
+          dst-angle (q/atan2 (- sx dx) (- sy dy))
+          dsx (+ dx (* 40 (q/sin dst-angle)))
+          dsy (+ dy (* 40 (q/cos dst-angle)))]
+      (arrow ssx ssy dsx dsy)))
 
   #_(let [offset 200
         x (- (center state :x) offset)
