@@ -16,7 +16,6 @@
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
 
-
 (defn in?
   "true if coll contains elm"
   [coll elm] (some #(= elm %) coll))
@@ -34,6 +33,22 @@
 
 (def size {:x 800 :y 600})
 
+(defn draw-rect [elem]
+  (let [x  (get-in elem [:coord :x])
+        y  (get-in elem [:coord :y])
+        xe (get-in elem [:size :x])
+        ye (get-in elem [:size :y])
+        symbol (get-in elem [:symbol])]
+    (q/rect x y xe ye)))
+
+(defn draw-ellipse [elem]
+  (let [x  (get-in elem [:coord :x])
+        y  (get-in elem [:coord :y])
+        xe (get-in elem [:size :x])
+        ye (get-in elem [:size :y])
+        symbol (get-in elem [:symbol])]
+    (q/ellipse (+ x (/ xe 2)) (+ y (/ ye 2)) xe ye)))
+
 (defn setup-sketch []
   (conj
    size
@@ -42,15 +57,19 @@
     :elem1
     {:coord {:x 100 :y 100}
      :size {:x 50 :y 50}
-     :active false}}
+     :drawfn draw-rect}}
    {:elem2
     {:coord {:x 400 :y 200}
      :size {:x 50 :y 50}
-     :active false}}
+     :drawfn draw-rect}}
    {:elem3
     {:coord {:x 200 :y 400}
      :size {:x 50 :y 50}
-     :active false}}))
+     :drawfn draw-rect}}
+   {:elem4
+    {:coord {:x 0 :y 0}
+     :size {:x 50 :y 50}
+     :drawfn draw-ellipse}}))
 
 (defn update-state [state] state)
 
@@ -72,13 +91,6 @@
 (def red-stroke [255 0 0])
 (def white-stroke [255 255 255])
 
-(defn draw-elem [elem]
-  (let [x  (get-in elem [:coord :x])
-        y  (get-in elem [:coord :y])
-        xe (get-in elem [:size :x])
-        ye (get-in elem [:size :y])]
-(q/rect x y xe ye)))
-
 (defn arrow [x1 y1 x2 y2]
   (q/line x1 y1 x2 y2)
   (q/push-matrix)
@@ -98,12 +110,14 @@
   (let [active-elems (get-in state [:active-elems])]
     (doseq [elem (elems state)]
       (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
-      (draw-elem (get-in state [elem]))))
+      (let [drawfn (get-in state [elem :drawfn])]
+        (drawfn (get-in state [elem])))))
   (doseq [[src dst] (get-in state [:arrows])]
     (let [src (get-in state [src])
           dst (get-in state [dst])]
       (arrow (center src :x) (center src :y)
              (center dst :x) (center dst :y))))
+
   #_(apply q/stroke black-stroke)
 
   #_(let [offset 200
