@@ -89,9 +89,18 @@
 (defn elems [state]
   (remove (fn [e] (in? #{:x :y :active-elems :arrows} e)) (keys state)))
 
+;; t/Num t/Num t/Num t/Num -> t/Num
+(defn quadrant [sx sy dx dy]
+  (cond
+    (and (< sx dx) (> sy dy)) 1
+    (and (> sx dx) (> sy dy)) 2
+    (and (> sx dx) (< sy dy)) 3
+    (and (< sx dx) (< sy dy)) 4
+    :else (do (println 'quadrant sx sy dx dy "s or d lie on the axis(es).")
+              -1)))
+
 (defn draw-state [state]
   (q/background 255)
-
   (let [active-elems (get-in state [:active-elems])]
     (doseq [elem (elems state)]
       (apply q/stroke (if (in? active-elems elem) black-stroke red-stroke))
@@ -101,13 +110,21 @@
   (doseq [[src dst] (get-in state [:arrows])]
     (let [{sx :x sy :y} (get-in state [src :center])
           {dx :x dy :y} (get-in state [dst :center])
+          q (quadrant sx sy dx dy)  ;; knowledge of quadrant doesn't help me
+          r (cond
+              (= 1 q) 40
+              (= 2 q) 40
+              (= 3 q) 40
+              (= 4 q) 40
+              :else (do (println 'draw-state "Unknown quadrant" q)
+                        40))
           src-angle (q/atan2 (- dx sx) (- dy sy))
-          ssx (+ sx (* 40 (q/sin src-angle)))
-          ssy (+ sy (* 40 (q/cos src-angle)))
+          ssx (+ sx (* r (q/sin src-angle)))
+          ssy (+ sy (* r (q/cos src-angle)))
 
           dst-angle (q/atan2 (- sx dx) (- sy dy))
-          dsx (+ dx (* 40 (q/sin dst-angle)))
-          dsy (+ dy (* 40 (q/cos dst-angle)))]
+          dsx (+ dx (* r (q/sin dst-angle)))
+          dsy (+ dy (* r (q/cos dst-angle)))]
       (arrow ssx ssy dsx dsy)))
 
   #_(let [offset 200
@@ -119,6 +136,7 @@
 (defn active-elems [state]
   (get-in state [:active-elems]))
 
+;; (t/ann over? [Elem -> t/Bool])
 (defn over? [elem event]
   (let [{ex :x ey :y} event
         {cx :x cy :y} (get-in elem [:center])
