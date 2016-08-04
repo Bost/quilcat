@@ -32,23 +32,47 @@
   (conj
    size
    {:active-elems #{}
-    :arrows #{[:elem1 :elem2] [:elem2 :elem3] [:elem1 :elem3] [:elem1 :elem4]}
+    :arrows #{[:elem1 :elem2]
+              ;; [:elem2 :elem3] [:elem1 :elem3] [:elem1 :elem4]
+              }
     :elem1
-    {:center {:x 100 :y 100}
+    {:center {:x 200 :y 200}
      :size {:width 50 :height 50}
      :drawfn draw-rect}}
    {:elem2
-    {:center {:x 400 :y 200}
+    {:center {:x 50 :y 250}
      :size {:width 50 :height 50}
      :drawfn draw-rect}}
-   {:elem3
+   #_{:elem3
     {:center {:x 200 :y 400}
      :size {:width 50 :height 50}
      :drawfn draw-rect}}
-   {:elem4
+   #_{:elem4
     {:center {:x 25 :y 25}
      :size {:width 50 :height 50}
      :drawfn draw-ellipse}}))
+
+(defn atan2-angle [sx sy dx dy]
+  (q/atan2 (- sy dy) (- dx sx)))
+
+(defn atan2-quadrant [angle]
+  (let [p_pi1_4 (/ q/PI 4)
+        p_pi3_4 (* 3 (/ q/PI 4))
+        m_pi1_4 (* -1 p_pi1_4)
+        m_pi3_4 (* -1 p_pi3_4)
+        r (cond
+            (< m_pi1_4 angle p_pi1_4) 1
+            (< p_pi1_4 angle p_pi3_4) 2
+            (or (> angle p_pi3_4)
+                (< angle m_pi3_4)) 3
+            (< m_pi3_4 angle m_pi1_4) 4
+            )]
+    #_(println "atan2-quadrant" "src" sx sy "dest" dx dy "angle" angle "r" r
+               "p_pi1_4" p_pi1_4
+               "p_pi3_4" p_pi3_4
+               "m_pi1_4" m_pi1_4
+               "m_pi3_4" m_pi3_4)
+    r))
 
 (defn in?
   "true if coll contains elm"
@@ -99,6 +123,11 @@
     :else (do (println 'quadrant sx sy dx dy "s or d lie on the axis(es).")
               -1)))
 
+(defn angle [sx sy dx dy]
+  (println sx sy dx dy)
+  #_(let [ang (q/atan2 (- dy sy) (- dx sx))]
+    (println "angle" ang)))
+
 (defn draw-state [state]
   (q/background 255)
   (let [active-elems (get-in state [:active-elems])]
@@ -110,15 +139,17 @@
   (doseq [[src dst] (get-in state [:arrows])]
     (let [{sx :x sy :y} (get-in state [src :center])
           {dx :x dy :y} (get-in state [dst :center])
-          q (quadrant sx sy dx dy)  ;; knowledge of quadrant doesn't help me
+          angle (atan2-angle sx sy dx dy)
+          q (atan2-quadrant angle)
+          src-angle (q/atan2 (- dx sx) (- dy sy))
           r (cond
               (= 1 q) 40
               (= 2 q) 40
               (= 3 q) 40
               (= 4 q) 40
               :else (do (println 'draw-state "Unknown quadrant" q)
-                        40))
-          src-angle (q/atan2 (- dx sx) (- dy sy))
+                        -                        40))
+
           ssx (+ sx (* r (q/sin src-angle)))
           ssy (+ sy (* r (q/cos src-angle)))
 
