@@ -17,14 +17,24 @@
 )
 
 (defn draw-rect [elem]
-  (let [{:keys [x y]} (get-in elem [:center])
-        {:keys [width height]} (get-in elem [:size])]
-    (q/rect (- x (/ width 2)) (- y (/ height 2)) width height)))
+  (let [{x :x y :y} (get-in elem [:center])
+        {w :width h :height} (get-in elem [:size])
+        name (get-in elem [:name])
+        letter-height 5]
+    (q/fill 0 0 0)
+    (q/text name (- x (* 3 (count name))) (+ y letter-height))
+    (q/no-fill)
+    (q/rect (- x (/ w 2)) (- y (/ h 2)) w h)))
 
 (defn draw-ellipse [elem]
-  (let [{:keys [x y]} (get-in elem [:center])
-        {:keys [width height]} (get-in elem [:size])]
-    (q/ellipse x y height width)))
+  (let [{x :x y :y} (get-in elem [:center])
+        {w :width h :height} (get-in elem [:size])
+        name (get-in elem [:name])
+        letter-height 5]
+    (q/fill 0 0 0)
+    (q/text name (- x (* 3 (count name))) (+ y letter-height))
+    (q/no-fill)
+    (q/ellipse x y h w)))
 
 (def size {:x 800 :y 600})
 
@@ -38,18 +48,22 @@
     :elem1
     {:center {:x 200 :y 200}
      :size {:width 50 :height 50}
+     :name "e1"
      :drawfn draw-rect}}
    {:elem2
     {:center {:x 50 :y 250}
      :size {:width 50 :height 50}
+     :name "e2"
      :drawfn draw-rect}}
    #_{:elem3
     {:center {:x 200 :y 400}
      :size {:width 50 :height 50}
+     :name "e3"
      :drawfn draw-rect}}
-   #_{:elem4
+   {:elem4
     {:center {:x 25 :y 25}
      :size {:width 50 :height 50}
+     :name "e4"
      :drawfn draw-ellipse}}))
 
 (defn atan2-angle [sx sy dx dy]
@@ -128,6 +142,11 @@
   #_(let [ang (q/atan2 (- dy sy) (- dx sx))]
     (println "angle" ang)))
 
+(def sqrt (.-sqrt js/Math))
+
+(defn hypotenuse [a b]
+  (sqrt (+ (* a a) (* b b))))
+
 (defn draw-state [state]
   (q/background 255)
   (let [active-elems (get-in state [:active-elems])]
@@ -139,17 +158,24 @@
   (doseq [[src dst] (get-in state [:arrows])]
     (let [{sx :x sy :y} (get-in state [src :center])
           {dx :x dy :y} (get-in state [dst :center])
-          angle (atan2-angle sx sy dx dy)
-          q (atan2-quadrant angle)
-          src-angle (q/atan2 (- dx sx) (- dy sy))
-          r (cond
-              (= 1 q) 40
-              (= 2 q) 40
-              (= 3 q) 40
-              (= 4 q) 40
-              :else (do (println 'draw-state "Unknown quadrant" q)
-                        -                        40))
+          angle-src-dst (atan2-angle sx sy dx dy)
 
+          quadrant-src-dst (atan2-quadrant angle-src-dst)
+          r
+          (let [{w :width h :height} (get-in state [src :size])
+                w2 (/ w 2)
+                h2 (/ h 2)]
+            (cond
+              (= 1 quadrant-src-dst) (hypotenuse w2 h2)
+              (= 2 quadrant-src-dst) (hypotenuse w2 h2)
+              (= 3 quadrant-src-dst) (hypotenuse w2 h2)
+              (= 4 quadrant-src-dst) (hypotenuse w2 h2)
+              (= -1 quadrant-src-dst) (hypotenuse w2 h2)
+              :else (do
+                      (println 'draw-state "Unknown quadrant: " quadrant-src-dst)
+                      40)))
+
+          src-angle (q/atan2 (- dx sx) (- dy sy))
           ssx (+ sx (* r (q/sin src-angle)))
           ssy (+ sy (* r (q/cos src-angle)))
 
