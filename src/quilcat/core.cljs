@@ -16,24 +16,24 @@
   ;; (swap! app-state update-in [:__figwheel_counter] inc)
 )
 
-(defn draw-rect [elem]
+(defn draw-name [elem]
   (let [{x :x y :y} (get-in elem [:center])
-        {w :width h :height} (get-in elem [:size])
         name (get-in elem [:name])
         letter-height 5]
     (q/fill 0 0 0)
     (q/text name (- x (* 3 (count name))) (+ y letter-height))
-    (q/no-fill)
+    (q/no-fill)))
+
+(defn draw-rect [elem]
+  (let [{x :x y :y} (get-in elem [:center])
+        {w :width h :height} (get-in elem [:size])]
+    (draw-name elem)
     (q/rect (- x (/ w 2)) (- y (/ h 2)) w h)))
 
 (defn draw-ellipse [elem]
   (let [{x :x y :y} (get-in elem [:center])
-        {w :width h :height} (get-in elem [:size])
-        name (get-in elem [:name])
-        letter-height 5]
-    (q/fill 0 0 0)
-    (q/text name (- x (* 3 (count name))) (+ y letter-height))
-    (q/no-fill)
+        {w :width h :height} (get-in elem [:size])]
+    (draw-name elem)
     (q/ellipse x y h w)))
 
 (def size {:x 800 :y 600})
