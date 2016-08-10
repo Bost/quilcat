@@ -38,6 +38,7 @@
 
 (def size {:x 800 :y 600})
 
+;; TODO move setup-sketch to a clj / cljc file and use clojure.typed
 (defn setup-sketch []
   (conj
    size
@@ -48,22 +49,22 @@
     :elem1
     {:center {:x 200 :y 200}
      :size {:width 50 :height 50}
-     :name "e1"
+     :name "e1:t1"
      :drawfn draw-rect}}
    {:elem2
     {:center {:x 50 :y 250}
      :size {:width 50 :height 50}
-     :name "e2"
+     :name "e2:t2"
      :drawfn draw-rect}}
    #_{:elem3
     {:center {:x 200 :y 400}
      :size {:width 50 :height 50}
-     :name "e3"
+     :name "e3:t3"
      :drawfn draw-rect}}
    {:elem4
     {:center {:x 25 :y 25}
      :size {:width 50 :height 50}
-     :name "e4"
+     :name "e4:t4"
      :drawfn draw-ellipse}}))
 
 (defn atan2-angle [sx sy dx dy]
