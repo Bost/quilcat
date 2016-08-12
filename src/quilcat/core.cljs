@@ -48,12 +48,12 @@
               }
     :elem1
     {:center {:x 200 :y 200}
-     :size {:width 50 :height 50}
+     :size {:width 50 :height 25}
      :name "e1:t1"
      :drawfn draw-rect}}
    {:elem2
     {:center {:x 50 :y 250}
-     :size {:width 50 :height 50}
+     :size {:width 50 :height 25}
      :name "e2:t2"
      :drawfn draw-rect}}
    #_{:elem3
@@ -94,13 +94,13 @@
   [coll elm] (some #(= elm %) coll))
 
 (defn arrow [x1 y1 x2 y2]
-  (let [cx1 (+ x1 50)
+  #_(let [cx1 (+ x1 50)
         cy1 (+ y1 50)
         cx2 (- x2 50)
         cy2 (- y2 50)
         ]
     (q/bezier x1 y1 cx1 cy1 cx2 cy2 x2 y2))
-  #_(q/line x1 y1 x2 y2)
+  (q/line x1 y1 x2 y2)
   (q/push-matrix)
   (q/translate x2 y2)
   (q/rotate (q/atan2 (- x1 x2) (- y2 y1)))
