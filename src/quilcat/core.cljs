@@ -21,7 +21,7 @@
         name (get-in elem [:name])
         letter-height 5]
     (q/fill 0 0 0)
-    (q/text name (- x (* 3 (count name))) (+ y letter-height))
+    (q/text name (- x (* 3 (count name)) 2) (+ y letter-height))
     (q/no-fill)))
 
 (defn draw-rect [elem]
@@ -34,12 +34,13 @@
   (let [{x :x y :y} (get-in elem [:center])
         {w :width h :height} (get-in elem [:size])]
     (draw-name elem)
-    (q/ellipse x y h w)))
+    #_(q/ellipse x y h w)))
 
 (def size {:x 800 :y 600})
 
 ;; TODO move setup-sketch to a clj / cljc file and use clojure.typed
 (defn setup-sketch []
+  (q/text-font (q/load-font "mono"))
   (conj
    size
    {:active-elems #{}
@@ -47,15 +48,17 @@
               ;; [:elem2 :elem3] [:elem1 :elem3] [:elem1 :elem4]
               }
     :elem1
-    {:center {:x 200 :y 200}
-     :size {:width 50 :height 25}
-     :name "e1:t1"
-     :drawfn draw-rect}}
+    {:name "e1:t1"
+     :center {:x 200 :y 200}
+     ;; testing arrows
+     ;; :size {:width 40 :height 10} :drawfn draw-rect
+     :size {:width 20 :height 44} :drawfn draw-ellipse}}
    {:elem2
-    {:center {:x 50 :y 250}
-     :size {:width 50 :height 25}
-     :name "e2:t2"
-     :drawfn draw-rect}}
+    {:name "e2:t2"
+     :center {:x 50 :y 250}
+     ;; testing arrows
+     ;; :size {:width 40 :height 10} :drawfn draw-rect
+     :size {:width 20 :height 44} :drawfn draw-ellipse}}
    #_{:elem3
     {:center {:x 200 :y 400}
      :size {:width 50 :height 50}
@@ -93,18 +96,17 @@
   "true if coll contains elm"
   [coll elm] (some #(= elm %) coll))
 
-(defn arrow [x1 y1 x2 y2]
+(defn draw-arrow [x1 y1 x2 y2]
   #_(let [cx1 (+ x1 50)
         cy1 (+ y1 50)
         cx2 (- x2 50)
-        cy2 (- y2 50)
-        ]
+        cy2 (- y2 50)]
     (q/bezier x1 y1 cx1 cy1 cx2 cy2 x2 y2))
   (q/line x1 y1 x2 y2)
   (q/push-matrix)
   (q/translate x2 y2)
   (q/rotate (q/atan2 (- x1 x2) (- y2 y1)))
-  (let [arrow-size 4]
+  (let [arrow-size 4] ; arrow-head
     (q/line 0 0 (- arrow-size) (- arrow-size))
     (q/line 0 0 (+ arrow-size) (- arrow-size)))
   (q/pop-matrix))
@@ -165,31 +167,23 @@
   (doseq [[src dst] (get-in state [:arrows])]
     (let [{sx :x sy :y} (get-in state [src :center])
           {dx :x dy :y} (get-in state [dst :center])
+
+          {sw :width sh :height} (get-in state [src :size])
+          sw2 (/ sw 2)
+          sh2 (/ sh 2)
           angle-src-dst (atan2-angle sx sy dx dy)
 
-          quadrant-src-dst (atan2-quadrant angle-src-dst)
-          r
-          (let [{w :width h :height} (get-in state [src :size])
-                w2 (/ w 2)
-                h2 (/ h 2)]
-            (cond
-              (= 1 quadrant-src-dst) (hypotenuse w2 h2)
-              (= 2 quadrant-src-dst) (hypotenuse w2 h2)
-              (= 3 quadrant-src-dst) (hypotenuse w2 h2)
-              (= 4 quadrant-src-dst) (hypotenuse w2 h2)
-              (= -1 quadrant-src-dst) (hypotenuse w2 h2)
-              :else (do
-                      (println 'draw-state "Unknown quadrant: " quadrant-src-dst)
-                      40)))
+          ssx (+ sx (* sh2 (q/cos angle-src-dst)))
+          ssy (- sy (* sw2 (q/sin angle-src-dst)))
 
-          src-angle (q/atan2 (- dx sx) (- dy sy))
-          ssx (+ sx (* r (q/sin src-angle)))
-          ssy (+ sy (* r (q/cos src-angle)))
+          angle-dst-src (atan2-angle dx dy sx sy)
+          {dw :width dh :height} (get-in state [dst :size])
+          dw2 (/ dw 2)
+          dh2 (/ dh 2)
 
-          dst-angle (q/atan2 (- sx dx) (- sy dy))
-          dsx (+ dx (* r (q/sin dst-angle)))
-          dsy (+ dy (* r (q/cos dst-angle)))]
-      (arrow ssx ssy dsx dsy)))
+          dsx (+ dx (* dh2 (q/cos angle-dst-src)))
+          dsy (- dy (* dw2 (q/sin angle-dst-src)))]
+      (draw-arrow ssx ssy dsx dsy)))
 
   #_(let [offset 200
         x (- (center state :x) offset)
