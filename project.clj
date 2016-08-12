@@ -33,7 +33,7 @@
                            ;; started and complied your application.
                            ;; Comment this out once it no longer serves you.
                            ;; :open-urls ["http://localhost:3449/index.html"]
-                           :devcards nil #_true
+                           :devcards false
                            }
 
                 :compiler {:main quilcat.core
