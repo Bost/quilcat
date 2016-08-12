@@ -4,7 +4,7 @@
             #_[sablono.core :as sab] ;; included via [devcards "0.2.1-7"]
             [clojure.set :as set])
   #_(:require-macros
-   [devcards.core :refer [defcard deftest]]))
+     [devcards.core :refer [defcard deftest]]))
 
 ;; TODO take a look at deftest
 
@@ -52,12 +52,14 @@
      :center {:x 200 :y 200}
      ;; testing arrows
      ;; :size {:width 40 :height 10} :drawfn draw-rect
+     :on-click-size {:width 40 :height 10}
      :size {:width 20 :height 44} :drawfn draw-ellipse}}
    {:elem2
     {:name "e2:t2"
      :center {:x 50 :y 250}
      ;; testing arrows
      ;; :size {:width 40 :height 10} :drawfn draw-rect
+     :on-click-size {:width 40 :height 10}
      :size {:width 20 :height 44} :drawfn draw-ellipse}}
    #_{:elem3
     {:center {:x 200 :y 400}
@@ -198,7 +200,7 @@
 (defn over? [elem event]
   (let [{ex :x ey :y} event
         {cx :x cy :y} (get-in elem [:center])
-        {w :width h :height} (get-in elem [:size])
+        {w :width h :height} (get-in elem [:on-click-size])
         w2 (/ w 2)
         h2 (/ h 2)]
     (and (<= (- cx w2) ex (+ cx w2))
