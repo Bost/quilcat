@@ -8,7 +8,7 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.93"]
-                 [devcards "0.2.1-7"]
+                 #_[devcards "0.2.1-7"] ;; contains sablono
                  [quil "2.4.0"]
                  [org.clojure/core.async "0.2.385"
                   :exclusions [org.clojure/tools.reader]]]
@@ -33,7 +33,7 @@
                            ;; started and complied your application.
                            ;; Comment this out once it no longer serves you.
                            ;; :open-urls ["http://localhost:3449/index.html"]
-                           :devcards true
+                           :devcards nil #_true
                            }
 
                 :compiler {:main quilcat.core

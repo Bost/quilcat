@@ -1,9 +1,9 @@
 (ns quilcat.core
   (:require [quil.core :as q :include-macros true]
             [quil.middleware :as m]
-            [sablono.core :as sab]
+            #_[sablono.core :as sab] ;; included via [devcards "0.2.1-7"]
             [clojure.set :as set])
-  (:require-macros
+  #_(:require-macros
    [devcards.core :refer [defcard deftest]]))
 
 ;; TODO take a look at deftest
