@@ -7,7 +7,7 @@
   :min-lein-version "2.6.1"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.93"]
+                 [org.clojure/clojurescript "1.9.198"]
                  #_[devcards "0.2.1-7"] ;; contains sablono
                  [quil "2.4.0"]
                  [org.clojure/core.async "0.2.385"
